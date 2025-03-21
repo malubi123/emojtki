@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scratch Emotki</title>
+    <style>
+        body { font-family: Arial, sans-serif; text-align: center; }
+        #chat { border: 1px solid #ccc; width: 300px; height: 200px; overflow-y: auto; margin: 10px auto; padding: 5px; }
+        #input { width: 80%; padding: 5px; }
+        #emotki { margin-top: 10px; }
+        .emotka { display: inline-block; width: 50px; height: 50px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Scratch Emotki</h1>
+    <input type="file" id="fileInput" accept=".sprite3">
+    <div id="emotki"></div>
+    <div id="chat"></div>
+    <input type="text" id="input" placeholder="Napisz wiadomość...">
+    <button onclick="sendMessage()">Wyślij</button>
+
+    <script>
+        document.getElementById('fileInput').addEventListener('change', async function(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = async function(e) {
+                const arrayBuffer = e.target.result;
+                const zip = await JSZip.loadAsync(arrayBuffer);
+                
+                // Szukamy plików kostiumów
+                const images = Object.keys(zip.files).filter(name => name.endsWith('.png'));
+                const emotkiDiv = document.getElementById('emotki');
+                emotkiDiv.innerHTML = '';
+
+                for (const imgName of images) {
+                    const imgData = await zip.files[imgName].async('blob');
+                    const imgURL = URL.createObjectURL(imgData);
+                    const imgElement = document.createElement('img');
+                    imgElement.src = imgURL;
+                    imgElement.className = 'emotka';
+                    imgElement.onclick = function() { addEmotkaToChat(imgURL); };
+                    emotkiDiv.appendChild(imgElement);
+                }
+            };
+            reader.readAsArrayBuffer(file);
+        });
+
+        function addEmotkaToChat(url) {
+            const chat = document.getElementById('chat');
+            const img = document.createElement('img');
+            img.src = url;
+            img.className = 'emotka';
+            chat.appendChild(img);
+        }
+
+        function sendMessage() {
+            const input = document.getElementById('input');
+            const chat = document.getElementById('chat');
+            if (input.value.trim() !== '') {
+                const p = document.createElement('p');
+                p.textContent = input.value;
+                chat.appendChild(p);
+                input.value = '';
+            }
+        }
+    </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.7.1/jszip.min.js"></script>
+</body>
+</html>
